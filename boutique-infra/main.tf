@@ -14,6 +14,8 @@ resource "google_container_cluster" "primary" {
   name     = "online-boutique-tf"
   location = "us-central1"
 
+  deletion_protection = false
+
   enable_autopilot = true
 
   depends_on = [google_project_service.container]
