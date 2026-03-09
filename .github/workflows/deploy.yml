@@ -1,0 +1,44 @@
+name: CI-CD Pipeline
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: "google-github-actions/auth@v2"
+        with:
+          workload_identity_provider: "projects/791570281451/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+          service_account: "github-actions-deployer@project-508b67ba-bc4a-4c1c-9dc.iam.gserviceaccount.com"
+
+      - name: Set up Cloud SDK
+        uses: "google-github-actions/setup-gcloud@v2"
+
+      - name: Configure Docker for GCP
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      # CI: Build and Push only the frontend for this demo
+      - name: Build and Push Frontend
+        run: |
+          docker build -t us-central1-docker.pkg.dev/project-508b67ba-bc4a-4c1c-9dc/boutique-repo/frontend:${{ github.sha }} ./src/frontend
+          docker push us-central1-docker.pkg.dev/project-508b67ba-bc4a-4c1c-9dc/boutique-repo/frontend:${{ github.sha }}
+
+      # CD: Deploy using your Helm Chart
+      - name: Deploy to GKE
+        run: |
+          gcloud container clusters get-credentials online-boutique-tf --region us-central1
+          helm upgrade --install online-boutique ./helm-chart \
+            --set frontend.image.repository=us-central1-docker.pkg.dev/project-508b67ba-bc4a-4c1c-9dc/boutique-repo/frontend \
+            --set frontend.image.tag=${{ github.sha }}

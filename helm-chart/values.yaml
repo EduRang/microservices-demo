@@ -17,7 +17,7 @@
 # Declare variables to be passed into your templates.
 
 images:
-  repository: us-central1-docker.pkg.dev/google-samples/microservices-demo
+  repository: us-central1-docker.pkg.dev/project-508b67ba-bc4a-4c1c-9dc/boutique-repo/frontend
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
@@ -125,7 +125,7 @@ frontend:
   virtualService:
     create: false
     hosts:
-    - "*"
+      - "*"
     gateway:
       name: asm-ingressgateway
       namespace: asm-ingress
