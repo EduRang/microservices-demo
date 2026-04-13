@@ -17,6 +17,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # --- INICIO DE INTEGRACIÓN VAULT ---
+      - name: Import Secrets from Vault
+        uses: hashicorp/vault-action@v3
+        with:
+          url: ${{ secrets.VAULT_ADDR }}
+          token: ${{ secrets.VAULT_TOKEN }}
+          tlsSkipVerify: true
+          secrets: |
+            secret/data/online-boutique/github-actions db_user | DB_USER ;
+            secret/data/online-boutique/github-actions db_password | DB_PASSWORD
+
+      - name: Verificar secretos inyectados (Evidencia Fase 3)
+        run: |
+          echo "Conexión a Vault exitosa."
+          echo "El usuario de base de datos recuperado de Vault es: $DB_USER"
+          # Nota: No imprimimos DB_PASSWORD por seguridad.
+      # --- FIN DE INTEGRACIÓN VAULT ---
       - name: Authenticate to Google Cloud
         uses: "google-github-actions/auth@v2"
         with:
@@ -50,3 +67,5 @@ jobs:
           helm upgrade --install online-boutique ./helm-chart \
             --set frontend.image.repository=us-central1-docker.pkg.dev/project-508b67ba-bc4a-4c1c-9dc/boutique-repo/frontend \
             --set frontend.image.tag=${{ github.sha }}
+            --set database.user=$DB_USER \
+            --set database.password=$DB_PASSWORD

@@ -1,0 +1,89 @@
+---
+- name: Aprovisionar Servidor HashiCorp Vault
+  hosts: vault_server
+  become: yes
+  vars:
+    vault_version: "1.15.4"
+
+  tasks:
+    - name: Actualizar repositorios e instalar dependencias
+      apt:
+        name: ["unzip", "curl", "jq"]
+        state: present
+        update_cache: yes
+
+    - name: Descargar HashiCorp Vault
+      unarchive:
+        src: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_amd64.zip"
+        dest: /usr/local/bin/
+        remote_src: yes
+        mode: "0755"
+
+    - name: Crear grupo vault
+      group:
+        name: vault
+        system: yes
+
+    - name: Crear usuario vault
+      user:
+        name: vault
+        group: vault
+        system: yes
+        shell: /bin/false
+
+    - name: Crear directorios de Vault
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: vault
+        group: vault
+        mode: "0755"
+      loop:
+        - /etc/vault.d
+        - /opt/vault/data
+
+    - name: Copiar archivo de configuración
+      template:
+        src: vault-config.hcl.j2
+        dest: /etc/vault.d/vault.hcl
+        owner: vault
+        group: vault
+        mode: "0640"
+
+    - name: Crear servicio systemd para Vault
+      copy:
+        dest: /etc/systemd/system/vault.service
+        content: |
+          [Unit]
+          Description="HashiCorp Vault - A tool for managing secrets"
+          Documentation=https://www.vaultproject.io/docs/
+          Requires=network-online.target
+          After=network-online.target
+
+          [Service]
+          User=vault
+          Group=vault
+          ProtectSystem=full
+          ProtectHome=read-only
+          PrivateTmp=yes
+          PrivateDevices=yes
+          SecureBits=keep-caps
+          AmbientCapabilities=CAP_IPC_LOCK
+          Capabilities=CAP_IPC_LOCK+ep
+          CapabilityBoundingSet=CAP_SYSLOG CAP_IPC_LOCK
+          NoNewPrivileges=yes
+          ExecStart=/usr/local/bin/vault server -config=/etc/vault.d/vault.hcl
+          ExecReload=/bin/kill --signal HUP $MAINPID
+          KillMode=process
+          KillSignal=SIGINT
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Habilitar e iniciar Vault
+      systemd:
+        name: vault
+        enabled: yes
+        state: started
