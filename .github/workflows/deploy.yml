@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # --- INICIO DE INTEGRACIÓN VAULT ---
+      # --- INICIO DE INTEGRACION VAULT ---
       - name: Import Secrets from Vault
         uses: hashicorp/vault-action@v3
         with:
@@ -33,7 +33,7 @@ jobs:
           echo "Conexión a Vault exitosa."
           echo "El usuario de base de datos recuperado de Vault es: $DB_USER"
           # Nota: No imprimimos DB_PASSWORD por seguridad.
-      # --- FIN DE INTEGRACIÓN VAULT ---
+      # --- FIN DE INTEGRACION VAULT ---
       - name: Authenticate to Google Cloud
         uses: "google-github-actions/auth@v2"
         with:
