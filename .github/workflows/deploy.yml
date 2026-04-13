@@ -66,6 +66,6 @@ jobs:
           gcloud container clusters get-credentials online-boutique-tf --region us-central1
           helm upgrade --install online-boutique ./helm-chart \
             --set frontend.image.repository=us-central1-docker.pkg.dev/project-508b67ba-bc4a-4c1c-9dc/boutique-repo/frontend \
-            --set frontend.image.tag=${{ github.sha }}
+            --set frontend.image.tag=${{ github.sha }} \
             --set database.user=$DB_USER \
             --set database.password=$DB_PASSWORD
